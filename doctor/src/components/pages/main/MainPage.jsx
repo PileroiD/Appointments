@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import styled from "styled-components";
 import { Link, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -24,7 +25,7 @@ const MainPageContainer = ({ className }) => {
     const isAuth = useSelector((state) => Object.keys(state.user.data).length);
 
     if (isAuth) {
-        return <Navigate to="/appointments" />;
+        return <Navigate to="/make-appointment" />;
     }
 
     return (

@@ -6,8 +6,6 @@ export const fetchMe = () => async (dispatch) => {
 
         dispatch({ type: "SET_USER", payload: data });
     } catch (error) {
-        return {
-            error,
-        };
+        console.log(error.response.data.message);
     }
 };

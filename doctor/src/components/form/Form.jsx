@@ -1,12 +1,17 @@
 /* eslint-disable react/prop-types */
-import { useFormik } from "formik";
+
 import styled from "styled-components";
-import * as Yup from "yup";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import * as Yup from "yup";
+
+import { loginValidationSchema } from "./loginValidationSchema";
+import { registerValidationSchema } from "./registerValidationSchema";
 
 import { registerUser } from "../../actions/fetchUser";
-import { useState } from "react";
+
+import { useForm } from "../../hooks/useForm";
+import { loginUser } from "../../actions/loginUser";
+import { useEffect, useState } from "react";
 
 const Input = styled.input`
     width: 400px;
@@ -28,55 +33,75 @@ const Button = styled.button`
     ${({ disabled }) => (disabled ? "cursor: auto;" : "cursor: pointer;")}
 `;
 
-const RegisterFormContainer = ({ className }) => {
+const FormContainer = ({ className, type }) => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
+    const [serverErrors, setServerErrors] = useState(null);
 
-    const [errors, setErrors] = useState(null);
+    const validationSchema =
+        type === "register" ? registerValidationSchema : loginValidationSchema;
 
-    const formik = useFormik({
+    const onSubmitAction = type === "register" ? registerUser : loginUser;
+
+    const { formik } = useForm({
         initialValues: {
             email: "",
             password: "",
         },
-        validationSchema: Yup.object({
-            email: Yup.string()
-                .email("Invalid email address")
-                .required("Required"),
-            password: Yup.string()
-                .min(8, "")
-                .matches(
-                    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
-                    "The password must contain at least one uppercase letter, one lowercase letter, one number and one special character"
-                )
-                .required("Password is required"),
-            confirmPassword: Yup.string()
-                .oneOf([Yup.ref("password"), null], "Passwords must match")
-                .required("Password confirmation is required"),
-        }),
-        onSubmit: (values) => onSubmit(values),
+        validationSchema: Yup.object(validationSchema),
+        onSubmit: (values) => {
+            dispatch(onSubmitAction(values)).then((response) => {
+                if (response.error) {
+                    if (Array.isArray(response.error.response.data)) {
+                        setServerErrors(response.error.response.data[0].msg);
+                    } else {
+                        setServerErrors(response.error.response.data.message);
+                    }
+                    return;
+                }
+            });
+        },
     });
 
-    const onSubmit = (values) => {
-        dispatch(registerUser(values)).then((response) => {
-            if (response.error) {
-                console.log("response :>> ", response);
-                if (Array.isArray(response.error.response.data)) {
-                    setErrors(response.error.response.data[0].msg);
-                } else {
-                    setErrors(response.error.response.data.message);
-                }
-                return;
-            }
-            navigate("/appointments");
-        });
+    useEffect(() => {
+        const timerId = setTimeout(() => {
+            setServerErrors(null);
+        }, 2000);
+
+        return () => clearTimeout(timerId);
+    }, [serverErrors]);
+
+    const confirmPasswordView = (formik) => {
+        return (
+            <>
+                <div className="confirm-password-wrapper">
+                    <label htmlFor="confirmPassword">Confirm password: </label>
+                    <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type="password"
+                        value={formik.values.confirmPassword}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                    />
+                </div>
+
+                {formik.errors.confirmPassword &&
+                formik.touched.confirmPassword ? (
+                    <div className="error">{formik.errors.confirmPassword}</div>
+                ) : null}
+            </>
+        );
     };
 
     return (
         <div className={className}>
-            {errors ? <div className="error-msg">{errors}</div> : null}
+            {serverErrors ? (
+                <div className="error-msg">{serverErrors}</div>
+            ) : null}
 
-            <div className="title">Registration</div>
+            <div className="title">
+                {type === "register" ? "Registration" : "Log in"}
+            </div>
             <form className="form" onSubmit={formik.handleSubmit}>
                 <div className="email-wrapper">
                     <label htmlFor="email">Email: </label>
@@ -108,22 +133,7 @@ const RegisterFormContainer = ({ className }) => {
                     <div className="error">{formik.errors.password}</div>
                 ) : null}
 
-                <div className="confirm-password-wrapper">
-                    <label htmlFor="confirmPassword">Confirm password: </label>
-                    <input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        value={formik.values.confirmPassword}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                    />
-                </div>
-
-                {formik.errors.confirmPassword &&
-                formik.touched.confirmPassword ? (
-                    <div className="error">{formik.errors.confirmPassword}</div>
-                ) : null}
+                {type === "register" ? confirmPasswordView(formik) : null}
 
                 <Button
                     disabled={Object.keys(formik.errors).length}
@@ -136,7 +146,7 @@ const RegisterFormContainer = ({ className }) => {
     );
 };
 
-export const RegisterForm = styled(RegisterFormContainer)`
+export const Form = styled(FormContainer)`
     & .title {
         font-size: 40px;
         font-family: "Dancing Script", sans-serif;
@@ -167,5 +177,12 @@ export const RegisterForm = styled(RegisterFormContainer)`
             margin-right: 50%;
             transform: translateX(50%);
         }
+    }
+
+    & .error-msg {
+        background: lightpink;
+        padding: 7px;
+        border-radius: 5px;
+        text-align: center;
     }
 `;

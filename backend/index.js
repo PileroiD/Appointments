@@ -1,10 +1,9 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
 import cors from "cors";
 
-import UserController from "./controllers/UserController.js";
+import { UserController, AppointmentController } from "./controllers/index.js";
 import handleValidationError from "./utils/handleValidationError.js";
 import { registerValidation } from "./validations.js";
 import checkAuth from "./utils/checkAuth.js";
@@ -14,7 +13,6 @@ const port = 4444;
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(cookieParser());
 
 app.use(
     express.urlencoded({
@@ -49,6 +47,10 @@ app.post(
 );
 
 app.get("/getme", checkAuth, UserController.getMe);
+
+app.post("/add-app", checkAuth, AppointmentController.addApp);
+
+app.get("/get-apps", checkAuth, AppointmentController.getAll);
 
 app.listen(port, (err) => {
     if (err) {

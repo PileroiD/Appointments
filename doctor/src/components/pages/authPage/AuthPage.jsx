@@ -1,23 +1,26 @@
+/* eslint-disable react/prop-types */
 import styled from "styled-components";
-import { LoginForm } from "../../form/LoginForm";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 
-const LoginPageContainer = ({ className }) => {
+import { Form } from "../../form/Form.jsx";
+
+const AuthPageContainer = ({ className, type }) => {
     const isAuth = useSelector((state) => Object.keys(state.user.data).length);
 
     if (isAuth) {
-        return <Navigate to="/appointments" />;
+        return <Navigate to="/my-appointments" />;
     }
 
     return (
         <div className={className}>
-            <LoginForm />
+            <Form type={type} />
         </div>
     );
 };
 
-export const LoginPage = styled(LoginPageContainer)`
+export const AuthPage = styled(AuthPageContainer)`
+    margin-top: -50px;
     width: 100%;
     height: 100vh;
     display: flex;
